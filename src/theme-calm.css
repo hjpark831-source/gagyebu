@@ -447,3 +447,7 @@ html:root {
 .memo-owl { width: 76px; height: auto; margin: 0 6px -6px 0; transform: rotate(-4deg); }
 .memo-empty { display: grid; justify-items: center; gap: 14px; padding: 28px 24px 32px; background: var(--sheet); border-radius: 24px; text-align: center; color: var(--ink-2); font-size: 14.5px; }
 .memo-owl.big { width: 128px; margin: 0; transform: none; }
+
+/* 처음 화면 타일: 손그림 선 아이콘 */
+.tile-face img { position: relative; width: 74%; height: 74%; object-fit: contain; }
+.memo-empty { padding: 32px 24px; }

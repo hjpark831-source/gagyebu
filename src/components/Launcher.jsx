@@ -1,6 +1,5 @@
 import { todayStr } from '../format.js';
 import { useStore } from '../store.jsx';
-import Icon from './Icons.jsx';
 
 const WEEK = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
 
@@ -28,7 +27,7 @@ export default function Launcher({ open }) {
         {tiles.map((t) => (
           <button key={t.id} type="button" className="tile" data-tab={t.id} onClick={() => open(t.id)}>
             <span className="tile-face">
-              <Icon name={t.id} size={40} stroke={1.5} />
+              <img src={`tile-${t.id}.png`} alt="" />
             </span>
             <span className="tile-label">{t.label}</span>
             <span className="tile-sub">{t.sub}</span>
