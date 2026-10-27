@@ -1,28 +1,50 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Assets from './components/Assets.jsx';
-import Home from './components/Home.jsx';
+import Icon from './components/Icons.jsx';
+import Launcher from './components/Launcher.jsx';
 import Ledger from './components/Ledger.jsx';
+import Memo, { MemoSheet } from './components/Memo.jsx';
 import QuickEntry from './components/QuickEntry.jsx';
 import Settings from './components/Settings.jsx';
-import Stats from './components/Stats.jsx';
 import { useStore } from './store.jsx';
 
-const TABS = [
-  { id: 'home', label: '홈', icon: 'M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z' },
-  { id: 'ledger', label: '가계부', icon: 'M6 3h10a2 2 0 0 1 2 2v16l-3-2-3 2-3-2-3 2V5a2 2 0 0 1 2-2zM9 8h6M9 12h6' },
-  { id: 'stats', label: '통계', icon: 'M5 20V11M12 20V5M19 20v-6' },
-  { id: 'assets', label: '자산', icon: 'M3 8h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM3 8l2-4h14l2 4M16 14h2' },
-  { id: 'settings', label: '설정', icon: 'M5 7h14M5 12h14M5 17h14M9 5v4M15 10v4M8 15v4' },
+const NAV = [
+  { id: 'launcher', label: '처음', icon: 'home' },
+  { id: 'ledger', label: '가계부', icon: 'ledger' },
+  { id: 'assets', label: '자산', icon: 'assets' },
+  { id: 'memo', label: '메모', icon: 'memo' },
+  { id: 'settings', label: '설정', icon: 'gear' },
 ];
 
 export default function App() {
   const { status } = useStore();
-  const [tab, setTab] = useState('home');
-  const [entry, setEntry] = useState(null); // null | { editing }
+  const [screen, setScreenState] = useState('launcher');
+  const [entry, setEntry] = useState(null); // 가계부 기록 창 { editing }
+  const [memoOpen, setMemoOpen] = useState(null); // 메모 창 { memo }
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
 
-  const openNew = () => setEntry({ editing: null });
+  // 폰의 뒤로 가기를 누르면 처음 화면으로 돌아온다
+  const go = useCallback((next) => {
+    if (next === screenRef.current) return;
+    if (screenRef.current === 'launcher') history.pushState({ inApp: true }, '');
+    if (next === 'launcher' && history.state?.inApp) {
+      history.back();
+      return;
+    }
+    setScreenState(next);
+    window.scrollTo(0, 0);
+  }, []);
+  useEffect(() => {
+    const onPop = () => setScreenState('launcher');
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  const newEntry = useCallback(() => setEntry({ editing: null }), []);
   const openEdit = useCallback((tx) => setEntry({ editing: tx }), []);
-  const close = useCallback(() => setEntry(null), []);
+  const closeEntry = useCallback(() => setEntry(null), []);
+  const closeMemo = useCallback(() => setMemoOpen(null), []);
 
   if (status === 'loading') return <div className="boot" aria-busy="true" />;
   if (status === 'error') {
@@ -34,41 +56,33 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app" data-screen={screen}>
       <main>
-        {tab === 'home' && <Home goTo={setTab} onEdit={openEdit} />}
-        {tab === 'ledger' && <Ledger goTo={setTab} onEdit={openEdit} />}
-        {tab === 'stats' && <Stats />}
-        {tab === 'assets' && <Assets />}
-        {tab === 'settings' && <Settings />}
+        {screen === 'launcher' && <Launcher open={go} onRecord={newEntry} />}
+        {screen === 'ledger' && <Ledger goTo={go} onEdit={openEdit} onNew={newEntry} />}
+        {screen === 'assets' && <Assets />}
+        {screen === 'memo' && <Memo onOpen={(memo) => setMemoOpen({ memo })} onNew={() => setMemoOpen({ memo: null })} />}
+        {screen === 'settings' && <Settings onBack={() => go('launcher')} />}
       </main>
 
-      {tab !== 'settings' && tab !== 'assets' && (
-        <button type="button" className="fab" onClick={openNew} aria-label="새 기록">
-          <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-          </svg>
-        </button>
-      )}
-
-      <nav className="tabbar" aria-label="화면 이동">
-        {TABS.map((t) => (
+      <nav className="navbar" aria-label="화면 이동">
+        {NAV.map((n) => (
           <button
-            key={t.id}
+            key={n.id}
             type="button"
-            className={tab === t.id ? 'on' : ''}
-            aria-current={tab === t.id ? 'page' : undefined}
-            onClick={() => setTab(t.id)}
+            className={screen === n.id ? 'on' : ''}
+            aria-current={screen === n.id ? 'page' : undefined}
+            aria-label={n.label}
+            onClick={() => go(n.id)}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-              <path d={t.icon} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span>{t.label}</span>
+            <Icon name={n.icon} size={22} />
+            {screen === n.id && <span>{n.label}</span>}
           </button>
         ))}
       </nav>
 
-      {entry && <QuickEntry key={entry.editing?.id ?? 'new'} editing={entry.editing} onClose={close} />}
+      {entry && <QuickEntry key={entry.editing?.id ?? 'new'} editing={entry.editing} onClose={closeEntry} />}
+      {memoOpen && <MemoSheet key={memoOpen.memo?.id ?? 'new'} memo={memoOpen.memo} onClose={closeMemo} />}
     </div>
   );
 }

@@ -67,8 +67,8 @@ let loadPromise;
 function loadAll() {
   if (!loadPromise) {
     loadPromise = (async () => {
-      let [transactions, categories, recurring, settingsList] = await Promise.all(
-        ['transactions', 'categories', 'recurring', 'settings'].map(getAll),
+      let [transactions, categories, recurring, settingsList, memos] = await Promise.all(
+        ['transactions', 'categories', 'recurring', 'settings', 'memos'].map(getAll),
       );
       if (categories.length === 0) {
         categories = seedCategories();
@@ -80,7 +80,7 @@ function loadAll() {
         await putMany('transactions', auto);
         transactions = [...transactions, ...auto];
       }
-      return { transactions, categories, recurring, settings };
+      return { transactions, categories, recurring, settings, memos };
     })();
   }
   return loadPromise;
@@ -92,6 +92,7 @@ const EMPTY = {
   transactions: [],
   categories: [],
   recurring: [],
+  memos: [],
   settings: { id: 'main', monthlyBudget: 0 },
 };
 
@@ -169,6 +170,11 @@ export function StoreProvider({ children }) {
         const rule = rawRef.current.recurring.find((r) => r.id === id);
         return rule && upsert('recurring', { ...rule, deleted: true });
       },
+      saveMemo: (memo) => upsert('memos', { id: uid(), pinned: false, ...memo }),
+      removeMemo: (id) => {
+        const memo = rawRef.current.memos.find((m) => m.id === id);
+        return memo && upsert('memos', { ...memo, deleted: true });
+      },
       setBudget: async (amount) => {
         const settings = { ...rawRef.current.settings, monthlyBudget: amount, updatedAt: Date.now() };
         await put('settings', settings);
@@ -188,6 +194,9 @@ export function StoreProvider({ children }) {
       categories,
       catById,
       rules: raw.recurring.filter((r) => !r.deleted),
+      memos: raw.memos
+        .filter((m) => !m.deleted)
+        .sort((a, b) => (a.pinned === b.pinned ? b.updatedAt - a.updatedAt : a.pinned ? -1 : 1)),
       settings: raw.settings,
       ...actions,
     };

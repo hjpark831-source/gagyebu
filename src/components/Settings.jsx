@@ -1,12 +1,21 @@
 import { useState } from 'react';
 import { currentYm, todayStr, won } from '../format.js';
 import { GROUPS, useStore } from '../store.jsx';
+import Icon from './Icons.jsx';
 
-export default function Settings() {
+export default function Settings({ onBack }) {
   return (
     <section className="screen">
-      <div className="month-nav">
-        <h2>설정</h2>
+      <header className="top-row">
+        <button type="button" className="circle-btn ghost" aria-label="처음 화면으로" onClick={onBack}>
+          <Icon name="back" size={22} />
+        </button>
+      </header>
+      <div className="title-row">
+        <h1 className="page-title">
+          <small>예산, 고정지출, 분류</small>
+          설정
+        </h1>
       </div>
       <BudgetForm />
       <FixedRules />
@@ -74,7 +83,7 @@ function FixedRules() {
               >
                 <span className="rule-name">{r.name || catById[r.categoryId]?.name}</span>
                 <span className="rule-sub">
-                  매달 {r.day}일 · {r.auto ? '자동 기록' : '자동 기록 꺼짐'}
+                  매달 {r.day}일, {r.auto ? '자동 기록' : '자동 기록 꺼짐'}
                 </span>
               </button>
               <span className="rule-amt">{won(r.amount)}</span>

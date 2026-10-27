@@ -2,8 +2,8 @@
 // 다음 단계에서 Firebase 동기화를 붙일 때도 이 저장 방식은 그대로 쓴다.
 
 const DB_NAME = 'gagyebu';
-const VERSION = 1;
-export const STORES = ['transactions', 'categories', 'recurring', 'settings'];
+const VERSION = 2;
+export const STORES = ['transactions', 'categories', 'recurring', 'settings', 'memos'];
 
 let dbPromise;
 

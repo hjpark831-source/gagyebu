@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { currentYm, dayLabel, daysIn, firstWeekday, pad, shortWon, todayStr, won } from '../format.js';
+import { addMonths, currentYm, dayLabel, daysIn, firstWeekday, pad, shortWon, todayStr, won } from '../format.js';
 import { GROUPS, sortByRecent, summarize, useStore } from '../store.jsx';
-import MonthNav from './MonthNav.jsx';
+import Icon from './Icons.jsx';
 import Passbook from './Passbook.jsx';
+import Stats from './Stats.jsx';
 
 const FILTERS = [
   { id: 'all', label: '전체' },
@@ -11,7 +12,13 @@ const FILTERS = [
   { id: 'variable', label: '변동지출' },
 ];
 
-export default function Ledger({ onEdit, goTo }) {
+const VIEWS = [
+  ['list', '목록'],
+  ['calendar', '달력'],
+  ['stats', '통계'],
+];
+
+export default function Ledger({ onEdit, onNew, goTo }) {
   const { transactions, catById, rules } = useStore();
   const [ym, setYm] = useState(currentYm());
   const [filter, setFilter] = useState('all');
@@ -23,98 +30,140 @@ export default function Ledger({ onEdit, goTo }) {
   const filtered = filter === 'all' ? month : month.filter((t) => groupOf(t) === filter);
   const shown = sortByRecent(day ? filtered.filter((t) => t.date === day) : filtered);
   const s = summarize(month, catById);
+  const [y, m] = ym.split('-').map(Number);
+  const isCurrent = ym === currentYm();
 
-  const changeMonth = (next) => {
-    setYm(next);
+  const changeMonth = (k) => {
+    setYm(addMonths(ym, k));
     setDay(null);
   };
 
   return (
     <section className="screen">
-      <MonthNav ym={ym} onChange={changeMonth} />
+      <header className="top-row">
+        <button type="button" className="circle-btn" aria-label="새 기록" onClick={onNew}>
+          <Icon name="plus" size={22} />
+        </button>
+        <div className="view-pill" role="tablist" aria-label="보기 방식">
+          {VIEWS.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={view === id}
+              className={view === id ? 'on' : ''}
+              onClick={() => {
+                setView(id);
+                setDay(null);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </header>
 
-      <dl className="tally tally-tight">
-        <div>
-          <dt>수입</dt>
-          <dd className="t-in">{won(s.income)}</dd>
-        </div>
-        <div>
-          <dt>지출</dt>
-          <dd className="t-out">{won(s.fixed + s.variable)}</dd>
-        </div>
-        <div>
-          <dt>남은 돈</dt>
-          <dd>{won(s.income - s.fixed - s.variable)}</dd>
-        </div>
-      </dl>
-
-      <div className="seg" role="tablist" aria-label="분류">
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            role="tab"
-            aria-selected={filter === f.id}
-            className={filter === f.id ? 'on' : ''}
-            onClick={() => setFilter(f.id)}
-          >
-            {f.label}
+      <div className="title-row">
+        <h1 className="page-title">
+          <small>{y}년</small>
+          {m}월 가계부
+        </h1>
+        <div className="month-arrows">
+          <button type="button" className="circle-btn small ghost" aria-label="이전 달" onClick={() => changeMonth(-1)}>
+            <Icon name="left" size={18} />
           </button>
-        ))}
-      </div>
-
-      {filter === 'fixed' && <FixedStatus ym={ym} rules={rules} month={month} catById={catById} goTo={goTo} />}
-
-      <div className="section-head">
-        <h3>{day ? dayLabel(day) : filter === 'all' ? '이번 달 기록' : `${GROUPS[filter]} 기록`}</h3>
-        <div className="view-toggle" role="group" aria-label="보기 방식">
-          <button type="button" className={view === 'list' ? 'on' : ''} onClick={() => { setView('list'); setDay(null); }}>
-            목록
-          </button>
-          <button type="button" className={view === 'calendar' ? 'on' : ''} onClick={() => setView('calendar')}>
-            달력
+          <button type="button" className="circle-btn small ghost" aria-label="다음 달" disabled={isCurrent} onClick={() => changeMonth(1)}>
+            <Icon name="right" size={18} />
           </button>
         </div>
       </div>
 
-      {view === 'calendar' && <Calendar ym={ym} list={filtered} day={day} onPick={setDay} />}
+      <div className="sum-card">
+        <div>
+          <span>수입</span>
+          <strong className="t-in">{won(s.income)}</strong>
+        </div>
+        <div>
+          <span>지출</span>
+          <strong>{won(s.fixed + s.variable)}</strong>
+        </div>
+        <div>
+          <span>남은 돈</span>
+          <strong>{won(s.income - s.fixed - s.variable)}</strong>
+        </div>
+      </div>
 
-      <Passbook
-        rows={shown}
-        onSelect={onEdit}
-        empty={day ? '이 날은 기록이 없어요.' : '이 달에는 해당하는 기록이 없어요.'}
-      />
+      {view === 'stats' ? (
+        <Stats ym={ym} embedded />
+      ) : (
+        <>
+          <FixedCards ym={ym} rules={rules} month={month} catById={catById} goTo={goTo} />
+
+          <div className="chips-row" role="tablist" aria-label="분류">
+            {FILTERS.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                role="tab"
+                aria-selected={filter === f.id}
+                className={`chip-tab ${filter === f.id ? 'on' : ''}`}
+                onClick={() => setFilter(f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {view === 'calendar' && <Calendar ym={ym} list={filtered} day={day} onPick={setDay} />}
+
+          <h2 className="list-title">{day ? dayLabel(day) : filter === 'all' ? '이번 달 기록' : `${GROUPS[filter]} 기록`}</h2>
+          <Passbook rows={shown} onSelect={onEdit} empty={day ? '이 날은 기록이 없어요.' : '이 달에는 해당하는 기록이 없어요.'} />
+        </>
+      )}
     </section>
   );
 }
 
-function FixedStatus({ ym, rules, month, catById, goTo }) {
+// 고정지출: 두 번째 참고 사진의 일정 카드처럼 가로로 넘겨 보는 카드
+function FixedCards({ ym, rules, month, catById, goTo }) {
   const today = todayStr();
   if (!rules.length) {
     return (
-      <div className="callout">
-        <p>통신비, 보험료처럼 매달 나가는 돈을 등록하면 결제일에 자동으로 기록돼요.</p>
-        <button type="button" className="btn-ghost" onClick={() => goTo('settings')}>
-          고정지출 등록하기
-        </button>
-      </div>
+      <button type="button" className="fixed-empty" onClick={() => goTo('settings')}>
+        <span>
+          <strong>고정지출 등록하기</strong>
+          통신비, 보험료처럼 매달 나가는 돈을 결제일에 자동으로 적어 드려요.
+        </span>
+        <Icon name="arrow" size={22} />
+      </button>
     );
   }
+  const items = rules
+    .map((r) => {
+      const date = `${ym}-${pad(Math.min(r.day, daysIn(ym)))}`;
+      const done = month.some((t) => t.recurringKey === `${r.id}:${ym}`);
+      return { r, date, done };
+    })
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+  const nextId = items.find((i) => !i.done && i.date >= today)?.r.id;
+
   return (
-    <ul className="fixed-status">
-      {rules.map((r) => {
-        const date = `${ym}-${pad(Math.min(r.day, daysIn(ym)))}`;
-        const done = month.some((t) => t.recurringKey === `${r.id}:${ym}`);
-        const state = done ? '기록됨' : date > today ? `${r.day}일 예정` : r.auto ? '기록 안 됨' : '직접 기록';
-        return (
-          <li key={r.id}>
-            <span className="fs-name">{r.name || catById[r.categoryId]?.name}</span>
-            <span className="fs-amt">{won(r.amount)}</span>
-            <span className={`fs-state ${done ? 'done' : ''}`}>{state}</span>
-          </li>
-        );
-      })}
-    </ul>
+    <>
+      <h2 className="list-title">고정지출</h2>
+      <div className="fixed-cards">
+        {items.map(({ r, done }) => (
+          <div key={r.id} className={`fx-card ${r.id === nextId ? 'next' : ''}`}>
+            <span className="fx-day">매달 {r.day}일</span>
+            <strong className="fx-name">{r.name || catById[r.categoryId]?.name}</strong>
+            <span className="fx-amt">{shortWon(r.amount)}원</span>
+            <span className="fx-state">{done ? '기록됨' : r.id === nextId ? '다가옴' : '예정'}</span>
+            <span className={`fx-mark ${done ? 'done' : ''}`} aria-hidden="true">
+              {done ? <Icon name="check" size={16} stroke={2.4} /> : null}
+            </span>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
