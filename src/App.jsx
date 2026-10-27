@@ -10,9 +10,9 @@ import { useStore } from './store.jsx';
 
 const NAV = [
   { id: 'launcher', label: '처음', icon: 'home' },
-  { id: 'ledger', label: '가계부', icon: 'ledger' },
-  { id: 'assets', label: '자산', icon: 'assets' },
-  { id: 'memo', label: '메모', icon: 'memo' },
+  { id: 'ledger', label: '가계부', img: 'nav-ledger.png' },
+  { id: 'assets', label: '자산', img: 'nav-assets.png' },
+  { id: 'memo', label: '메모', img: 'nav-memo.png' },
   { id: 'settings', label: '설정', icon: 'gear' },
 ];
 
@@ -75,7 +75,11 @@ export default function App() {
             aria-label={n.label}
             onClick={() => go(n.id)}
           >
-            <Icon name={n.icon} size={22} />
+            {n.img ? (
+              <span className="nav-ic" style={{ WebkitMaskImage: `url(${n.img})`, maskImage: `url(${n.img})` }} aria-hidden="true" />
+            ) : (
+              <Icon name={n.icon} size={22} />
+            )}
             {screen === n.id && <span>{n.label}</span>}
           </button>
         ))}
