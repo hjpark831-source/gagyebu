@@ -58,7 +58,7 @@ export default function App() {
   return (
     <div className="app" data-screen={screen}>
       <main>
-        {screen === 'launcher' && <Launcher open={go} onRecord={newEntry} />}
+        {screen === 'launcher' && <Launcher open={go} />}
         {screen === 'ledger' && <Ledger goTo={go} onEdit={openEdit} onNew={newEntry} />}
         {screen === 'assets' && <Assets />}
         {screen === 'memo' && <Memo onOpen={(memo) => setMemoOpen({ memo })} onNew={() => setMemoOpen({ memo: null })} />}

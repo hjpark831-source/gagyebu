@@ -351,3 +351,10 @@ input:not([type='checkbox']), select { background: var(--paper); border-color: v
 .mc-net { color: var(--ink); }
 .hint { text-align: center; font-size: 13.5px; color: var(--ink-3); margin: 18px 0 0; }
 .sum-card .t-out { color: #e8a596; }
+
+/* 처음 화면: 요약 카드를 빼고 그림을 크게 */
+.launcher { padding-bottom: 520px; }
+.greet { font-size: 40px; margin: 8px 0 0; }
+.greet-rule { margin: 18px 0 30px; }
+.tiles { margin-top: 0; }
+.landscape { height: 560px; }
