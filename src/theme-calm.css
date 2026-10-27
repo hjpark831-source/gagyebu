@@ -358,3 +358,6 @@ input:not([type='checkbox']), select { background: var(--paper); border-color: v
 .greet-rule { margin: 18px 0 30px; }
 .tiles { margin-top: 0; }
 .landscape { height: 560px; }
+
+/* 탭 타일을 제목에서 조금 떨어뜨려, 그림 바로 위에 놓이게 */
+.tiles { margin-top: clamp(48px, 13dvh, 140px); }
