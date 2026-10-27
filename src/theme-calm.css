@@ -278,4 +278,76 @@ input:not([type='checkbox']), select { background: var(--paper); border-color: v
 .tiles { margin-top: 22px; gap: 12px; }
 .tile-face { aspect-ratio: 1 / 0.86; border-radius: 24px; }
 .tile-label { margin-top: 8px; }
-.landscape { height: 360px; }
+.landscape { height: 380px; }
+
+/* ---------- 일간 보기 ---------- */
+.day-groups { display: grid; gap: 12px; }
+.day-card { background: var(--sheet); border-radius: 24px; overflow: hidden; }
+.day-head {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.dh-day { font-family: var(--serif); font-weight: 600; font-size: 24px; line-height: 1; min-width: 28px; }
+.dh-week { font-size: 12px; font-weight: 600; color: var(--sheet); background: var(--taupe); border-radius: 6px; padding: 2px 7px; }
+.dh-week.sun { background: var(--out); }
+.dh-week.sat { background: #4f6b8a; }
+.dh-ym { font-size: 12.5px; color: var(--ink-3); }
+.dh-in { font-size: 14px; color: var(--in); font-weight: 500; text-align: right; }
+.dh-out { font-size: 14px; color: var(--out); font-weight: 500; text-align: right; min-width: 64px; }
+.day-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 12px 18px;
+  text-align: left;
+}
+.day-row + .day-row { border-top: 1px solid var(--rule-soft); }
+.day-row:active { background: var(--sand-2); }
+.dr-cat { font-size: 13px; color: var(--ink-2); display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.dr-cat .pb-tag { font-size: 10.5px; line-height: 15px; }
+.dr-what { display: grid; min-width: 0; }
+.dr-title { font-size: 15.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dr-sub { font-size: 12px; color: var(--ink-3); }
+.dr-amt { font-family: var(--serif); font-weight: 500; font-size: 15.5px; white-space: nowrap; }
+.dr-amt.in { color: var(--in); }
+.dr-amt.out { color: var(--out); }
+
+/* ---------- 월간 달력 ---------- */
+.month-cal {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin: 20px -20px 0;
+  background: var(--sheet);
+  border-top: 1px solid var(--rule);
+}
+.mc-w { text-align: center; font-size: 12.5px; color: var(--ink-2); padding: 8px 0; background: var(--sand-2); }
+.mc-w.sun, .mc-d.sun { color: var(--out); }
+.mc-w.sat, .mc-d.sat { color: #4f6b8a; }
+.mc-cell {
+  min-height: 92px;
+  padding: 5px 4px 6px 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  border-right: 1px solid var(--rule-soft);
+  border-bottom: 1px solid var(--rule-soft);
+  text-align: left;
+}
+.mc-cell:nth-child(7n) { border-right: 0; }
+.mc-cell.outside { background: var(--paper); }
+.mc-cell.outside .mc-d, .mc-cell.outside .mc-nums { opacity: 0.45; }
+.mc-d { font-size: 13px; line-height: 1.2; align-self: flex-start; padding: 1px 4px; border-radius: 4px; }
+.mc-cell.today .mc-d { background: var(--ink); color: var(--sheet); }
+.mc-cell.picked { background: var(--sand); }
+.mc-nums { margin-top: auto; display: grid; gap: 1px; text-align: right; font-size: 10.5px; letter-spacing: -0.03em; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.mc-in { color: var(--in); }
+.mc-out { color: var(--out); }
+.mc-net { color: var(--ink); }
+.hint { text-align: center; font-size: 13.5px; color: var(--ink-3); margin: 18px 0 0; }
+.sum-card .t-out { color: #e8a596; }

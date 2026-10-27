@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { addMonths, currentYm, dayLabel, daysIn, firstWeekday, pad, shortWon, todayStr, won } from '../format.js';
+import { addMonths, currentYm, dayLabel, daysIn, firstWeekday, num, pad, shortWon, todayStr, won } from '../format.js';
 import { GROUPS, sortByRecent, summarize, useStore } from '../store.jsx';
+import DayGroups from './DayGroups.jsx';
 import Icon from './Icons.jsx';
-import Passbook from './Passbook.jsx';
 import Stats from './Stats.jsx';
 
 const FILTERS = [
@@ -13,8 +13,8 @@ const FILTERS = [
 ];
 
 const VIEWS = [
-  ['list', '목록'],
-  ['calendar', '달력'],
+  ['daily', '일간'],
+  ['monthly', '월간'],
   ['stats', '통계'],
 ];
 
@@ -22,13 +22,12 @@ export default function Ledger({ onEdit, onNew, goTo }) {
   const { transactions, catById, rules } = useStore();
   const [ym, setYm] = useState(currentYm());
   const [filter, setFilter] = useState('all');
-  const [view, setView] = useState('list');
+  const [view, setView] = useState('daily');
   const [day, setDay] = useState(null);
 
   const month = transactions.filter((t) => t.date.startsWith(ym));
   const groupOf = (t) => (t.type === 'income' ? 'income' : catById[t.categoryId]?.group === 'fixed' ? 'fixed' : 'variable');
   const filtered = filter === 'all' ? month : month.filter((t) => groupOf(t) === filter);
-  const shown = sortByRecent(day ? filtered.filter((t) => t.date === day) : filtered);
   const s = summarize(month, catById);
   const [y, m] = ym.split('-').map(Number);
   const isCurrent = ym === currentYm();
@@ -85,46 +84,62 @@ export default function Ledger({ onEdit, onNew, goTo }) {
         </div>
         <div>
           <span>지출</span>
-          <strong>{won(s.fixed + s.variable)}</strong>
+          <strong className="t-out">{won(s.fixed + s.variable)}</strong>
         </div>
         <div>
-          <span>남은 돈</span>
+          <span>합계</span>
           <strong>{won(s.income - s.fixed - s.variable)}</strong>
         </div>
       </div>
 
-      {view === 'stats' ? (
-        <Stats ym={ym} embedded />
-      ) : (
+      {view === 'stats' && <Stats ym={ym} embedded />}
+
+      {view === 'daily' && (
         <>
           <FixedCards ym={ym} rules={rules} month={month} catById={catById} goTo={goTo} />
+          <FilterChips filter={filter} setFilter={setFilter} />
+          <h2 className="list-title">{filter === 'all' ? '날짜별 기록' : `${GROUPS[filter]} 기록`}</h2>
+          <DayGroups rows={sortByRecent(filtered)} onSelect={onEdit} empty="이 달에는 해당하는 기록이 없어요." />
+        </>
+      )}
 
-          <div className="chips-row" role="tablist" aria-label="분류">
-            {FILTERS.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                role="tab"
-                aria-selected={filter === f.id}
-                className={`chip-tab ${filter === f.id ? 'on' : ''}`}
-                onClick={() => setFilter(f.id)}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          {view === 'calendar' && <Calendar ym={ym} list={filtered} day={day} onPick={setDay} />}
-
-          <h2 className="list-title">{day ? dayLabel(day) : filter === 'all' ? '이번 달 기록' : `${GROUPS[filter]} 기록`}</h2>
-          <Passbook rows={shown} onSelect={onEdit} empty={day ? '이 날은 기록이 없어요.' : '이 달에는 해당하는 기록이 없어요.'} />
+      {view === 'monthly' && (
+        <>
+          <MonthCalendar ym={ym} all={transactions} day={day} onPick={setDay} />
+          {day ? (
+            <>
+              <h2 className="list-title">{dayLabel(day)}</h2>
+              <DayGroups rows={sortByRecent(transactions.filter((t) => t.date === day))} onSelect={onEdit} empty="이 날은 기록이 없어요." />
+            </>
+          ) : (
+            <p className="hint">날짜를 누르면 그날 기록을 볼 수 있어요.</p>
+          )}
         </>
       )}
     </section>
   );
 }
 
-// 고정지출: 두 번째 참고 사진의 일정 카드처럼 가로로 넘겨 보는 카드
+function FilterChips({ filter, setFilter }) {
+  return (
+    <div className="chips-row" role="tablist" aria-label="분류">
+      {FILTERS.map((f) => (
+        <button
+          key={f.id}
+          type="button"
+          role="tab"
+          aria-selected={filter === f.id}
+          className={`chip-tab ${filter === f.id ? 'on' : ''}`}
+          onClick={() => setFilter(f.id)}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// 고정지출: 가로로 넘겨 보는 일정 카드
 function FixedCards({ ym, rules, month, catById, goTo }) {
   const today = todayStr();
   if (!rules.length) {
@@ -167,37 +182,66 @@ function FixedCards({ ym, rules, month, catById, goTo }) {
   );
 }
 
-function Calendar({ ym, list, day, onPick }) {
-  const total = {};
-  for (const t of list) {
-    if (t.type === 'income') continue;
-    total[t.date] = (total[t.date] || 0) + t.amount;
+// 월간 보기: 앞뒤 달 날짜까지 채운 6주 달력, 칸마다 수입 / 지출 / 합계
+function MonthCalendar({ ym, all, day, onPick }) {
+  const sums = {};
+  for (const t of all) {
+    const v = (sums[t.date] ||= { in: 0, out: 0 });
+    if (t.type === 'income') v.in += t.amount;
+    else v.out += t.amount;
   }
-  const blanks = firstWeekday(ym);
-  const n = daysIn(ym);
   const today = todayStr();
+  const lead = firstWeekday(ym);
+  const prevYm = addMonths(ym, -1);
+  const nextYm = addMonths(ym, 1);
+  const prevDays = daysIn(prevYm);
+  const n = daysIn(ym);
+  const total = Math.ceil((lead + n) / 7) * 7;
+
   const cells = [];
-  for (let i = 0; i < blanks; i++) cells.push(<span key={`b${i}`} className="cal-cell blank" />);
-  for (let d = 1; d <= n; d++) {
-    const date = `${ym}-${pad(d)}`;
-    const sum = total[date];
+  for (let i = 0; i < total; i++) {
+    let date;
+    let label;
+    let outside = false;
+    if (i < lead) {
+      const d = prevDays - lead + i + 1;
+      date = `${prevYm}-${pad(d)}`;
+      label = d;
+      outside = true;
+    } else if (i >= lead + n) {
+      const d = i - lead - n + 1;
+      date = `${nextYm}-${pad(d)}`;
+      label = d === 1 ? `${Number(nextYm.slice(5))}.1` : d;
+      outside = true;
+    } else {
+      const d = i - lead + 1;
+      date = `${ym}-${pad(d)}`;
+      label = d === 1 ? `${Number(ym.slice(5))}.1` : d;
+    }
+    const v = sums[date];
+    const wd = i % 7;
     cells.push(
       <button
         key={date}
         type="button"
-        className={`cal-cell ${day === date ? 'picked' : ''} ${date === today ? 'today' : ''}`}
+        className={`mc-cell ${outside ? 'outside' : ''} ${day === date ? 'picked' : ''} ${date === today ? 'today' : ''}`}
         onClick={() => onPick(day === date ? null : date)}
-        aria-label={`${d}일${sum ? ` 지출 ${won(sum)}` : ''}`}
+        aria-label={`${date}${v?.in ? ` 수입 ${won(v.in)}` : ''}${v?.out ? ` 지출 ${won(v.out)}` : ''}`}
       >
-        <span className="cal-d">{d}</span>
-        {sum ? <span className="cal-sum">{shortWon(sum)}</span> : null}
+        <span className={`mc-d ${wd === 0 ? 'sun' : wd === 6 ? 'sat' : ''}`}>{label}</span>
+        <span className="mc-nums">
+          {v?.in ? <span className="mc-in">{num(v.in)}</span> : null}
+          {v?.out ? <span className="mc-out">{num(v.out)}</span> : null}
+          {v?.in ? <span className="mc-net">{num(v.in - v.out)}</span> : null}
+        </span>
       </button>,
     );
   }
+
   return (
-    <div className="calendar">
-      {['일', '월', '화', '수', '목', '금', '토'].map((w) => (
-        <span key={w} className="cal-w">
+    <div className="month-cal">
+      {['일', '월', '화', '수', '목', '금', '토'].map((w, i) => (
+        <span key={w} className={`mc-w ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}`}>
           {w}
         </span>
       ))}
