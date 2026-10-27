@@ -1,11 +1,10 @@
 import { todayStr } from '../format.js';
 import { useStore } from '../store.jsx';
 import Icon from './Icons.jsx';
-import Landscape from './Landscape.jsx';
 
 const WEEK = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
 
-// 앱을 열면 처음 보이는 화면: 날짜, 제목, 탭 3개, 밤 호수 그림
+// 앱을 열면 처음 보이는 화면: 날짜, 제목, 탭 3개, 아래쪽 그림
 export default function Launcher({ open }) {
   const { transactions, memos } = useStore();
   const now = new Date();
@@ -37,7 +36,9 @@ export default function Launcher({ open }) {
         ))}
       </div>
 
-      <Landscape />
+      <div className="scene" aria-hidden="true">
+        <img src="scene.jpg" alt="" decoding="async" />
+      </div>
     </section>
   );
 }

@@ -65,7 +65,7 @@ main { padding: 0 20px calc(110px + env(safe-area-inset-bottom)); }
   min-height: 100dvh;
   padding: max(40px, calc(env(safe-area-inset-top) + 28px)) 0 330px;
 }
-.launcher > :not(.landscape) { position: relative; z-index: 1; }
+.launcher > :not(.scene) { position: relative; z-index: 1; }
 .greet-date { font-size: 14px; color: var(--ink-3); }
 .greet {
   font-family: var(--serif);
@@ -361,3 +361,22 @@ input:not([type='checkbox']), select { background: var(--paper); border-color: v
 
 /* 탭 타일을 제목에서 조금 떨어뜨려, 그림 바로 위에 놓이게 */
 .tiles { margin-top: clamp(48px, 13dvh, 140px); }
+
+/* 처음 화면 아래 그림 (사진): 위쪽은 바탕색으로 녹아들게 */
+.scene {
+  position: absolute;
+  left: -20px;
+  right: -20px;
+  bottom: 0;
+  height: 560px;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.scene img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; display: block; }
+.scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--paper) 0%, rgba(242, 238, 230, 0.85) 10%, rgba(242, 238, 230, 0) 34%);
+}
