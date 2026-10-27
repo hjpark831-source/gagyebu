@@ -380,3 +380,65 @@ input:not([type='checkbox']), select { background: var(--paper); border-color: v
   inset: 0;
   background: linear-gradient(var(--paper) 0%, rgba(242, 238, 230, 0.85) 10%, rgba(242, 238, 230, 0) 34%);
 }
+
+/* ---------- 그림에 맞춘 색: 달밤의 남색, 은빛 구름, 등불의 호박색 ---------- */
+html:root {
+  --paper: #f1eee8;
+  --sheet: #fbfaf7;
+  --sand: #e0dbd1;
+  --sand-2: #ebe7df;
+  --taupe: #c7bfb1;
+  --rule: #ddd8ce;
+  --rule-soft: #e9e5dd;
+  --ink: #1e2440;
+  --ink-2: #545a6e;
+  --ink-3: #8e93a3;
+  --pine: #26355a;      /* 밤하늘 남색 (주 색) */
+  --ochre: #d09a4e;     /* 창문 등불 호박색 */
+  --sage: #7f8fae;      /* 달빛 구름 은청색 */
+  --in: #2f5f9e;
+  --out: #b0563f;
+  --accent: #26355a;
+}
+
+.greet { color: var(--pine); }
+.greet-rule { background: linear-gradient(90deg, var(--ochre), #f0c987); width: 44px; }
+
+.tile-face { position: relative; overflow: hidden; box-shadow: 0 10px 22px rgba(30, 36, 64, 0.18); }
+.tile-face::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 80% at 30% 0%, rgba(255, 255, 255, 0.22), transparent 55%);
+}
+.tile-face svg { position: relative; }
+.tile[data-tab='ledger'] .tile-face { background: linear-gradient(160deg, #34477a, #1d2846); }
+.tile[data-tab='assets'] .tile-face { background: linear-gradient(160deg, #e5b569, #b97b34); }
+.tile[data-tab='memo'] .tile-face { background: linear-gradient(160deg, #a2b0cb, #6b7b9c); }
+.tile[data-tab='ledger'] .tile-face svg { color: #f3d9a4; }
+
+.navbar { background: linear-gradient(180deg, #252d4d, #1a2038); }
+.navbar button { color: #b9bfd4; }
+.navbar button.on { background: #f3e3c1; color: var(--ink); }
+.view-pill { background: var(--ink); }
+.view-pill button { color: #b9bfd4; }
+.view-pill button.on { background: #f3e3c1; color: var(--ink); }
+.circle-btn { background: var(--ink); }
+
+.sum-card { background: linear-gradient(160deg, #2a3561, #1b2140); }
+.sum-card span { color: #a7aecb; }
+.sum-card .t-in { color: #a9c6f2; }
+.sum-card .t-out { color: #f0b48a; }
+
+.fx-card.next { background: linear-gradient(160deg, #2a3561, #1b2140); }
+.fx-card.next .fx-day, .fx-card.next .fx-state, .fx-card.next .fx-amt { color: #a7aecb; }
+.chip-tab.on { background: var(--ink); border-color: var(--ink); }
+.pb-tag { color: var(--pine); border-color: color-mix(in srgb, var(--pine) 45%, transparent); }
+.dh-week.sat, .mc-w.sat, .mc-d.sat { color: var(--in); }
+.dh-week.sat { background: var(--in); color: var(--sheet); }
+.mc-cell.today .mc-d { background: var(--pine); }
+.bar-track span { background: var(--ochre); }
+.bar-track span.fixed { background: var(--pine); }
+.soon-icon { background: linear-gradient(160deg, #e5b569, #b97b34); }
+.memo-list li:first-child .memo-card { background: #f3e3c1; }
+.text-btn { color: var(--pine); }
