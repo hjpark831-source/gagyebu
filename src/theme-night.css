@@ -1,0 +1,161 @@
+/* 밤 유리 테마: 깊은 남색 바탕에 푸른 빛 번짐, 반투명 유리 카드, 얼음빛 포인트.
+   내용과 배치는 그대로 두고 색과 질감만 덮어쓴다. */
+html:root {
+  --paper: #0a1433;
+  --sheet: #142251;
+  --sand: rgba(150, 185, 255, 0.12);
+  --sand-2: rgba(150, 185, 255, 0.08);
+  --taupe: rgba(170, 200, 255, 0.28);
+  --rule: rgba(170, 200, 255, 0.18);
+  --rule-soft: rgba(170, 200, 255, 0.1);
+  --ink: #eaf0ff;
+  --ink-2: #b2c0e0;
+  --ink-3: #7c8bb0;
+  --pine: #9cc0ff;
+  --ochre: #9cc0ff;
+  --sage: #7fa4e8;
+  --accent: #9cc0ff;
+  --on-accent: #0a1433;
+  --in: #8fc4ff;
+  --out: #ffa697;
+  --glass: rgba(140, 175, 255, 0.1);
+  --glass-hi: rgba(160, 195, 255, 0.18);
+  --glass-line: rgba(180, 205, 255, 0.2);
+  --glow: 0 0 0 1px var(--glass-line) inset, 0 10px 30px rgba(2, 6, 24, 0.45);
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(90% 55% at 15% 8%, rgba(56, 102, 210, 0.38), transparent 60%),
+    radial-gradient(80% 50% at 90% 45%, rgba(40, 80, 190, 0.3), transparent 60%),
+    radial-gradient(90% 60% at 30% 95%, rgba(30, 64, 160, 0.35), transparent 60%),
+    linear-gradient(180deg, #0b1638 0%, #070d24 100%);
+  background-attachment: fixed;
+  color: var(--ink);
+}
+
+/* 유리 카드 공통 */
+.budget-card, .sum-card, .fx-card, .fixed-empty, .day-card, .month-cal, .passbook-empty, .memo-empty,
+.memo-card, .soon-card, .panel, .bars, .plain-rows, .tile-face {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: var(--glow);
+  border: 0;
+}
+
+/* 처음 화면 */
+.greet { color: var(--ink); text-shadow: 0 0 24px rgba(140, 180, 255, 0.35); }
+.greet-date { color: var(--ink-3); }
+.greet-rule { background: linear-gradient(90deg, #9cc0ff, rgba(156, 192, 255, 0)); }
+.tile[data-tab] .tile-face {
+  background: linear-gradient(160deg, rgba(150, 185, 255, 0.2), rgba(90, 130, 230, 0.08));
+  box-shadow: 0 0 0 1px rgba(190, 215, 255, 0.28) inset, 0 12px 30px rgba(2, 6, 24, 0.5), 0 0 26px rgba(90, 140, 255, 0.18);
+}
+.tile-face::before { background: radial-gradient(120% 70% at 30% 0%, rgba(255, 255, 255, 0.22), transparent 55%); }
+.tile-face img { filter: drop-shadow(0 0 6px rgba(160, 200, 255, 0.55)); }
+.tile-label { color: var(--ink); }
+.tile-sub { color: var(--ink-3); }
+.scene::after { display: none; }
+.scene img {
+  -webkit-mask-image: linear-gradient(transparent 0%, rgba(0, 0, 0, 0.55) 16%, #000 36%);
+  mask-image: linear-gradient(transparent 0%, rgba(0, 0, 0, 0.55) 16%, #000 36%);
+}
+
+/* 아래 탭 바, 위쪽 버튼 */
+.navbar {
+  background: rgba(16, 28, 66, 0.58);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: 0 0 0 1px var(--glass-line) inset, 0 14px 34px rgba(2, 6, 24, 0.55);
+}
+.navbar button { color: #9fb0d6; }
+.navbar button.on { background: var(--glass-hi); color: #ffffff; box-shadow: 0 0 0 1px rgba(200, 220, 255, 0.3) inset, 0 0 18px rgba(120, 170, 255, 0.35); }
+.view-pill { background: var(--glass); box-shadow: 0 0 0 1px var(--glass-line) inset; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.view-pill button { color: #9fb0d6; }
+.view-pill button.on { background: var(--glass-hi); color: #ffffff; box-shadow: 0 0 0 1px rgba(200, 220, 255, 0.3) inset; }
+.circle-btn { background: var(--glass-hi); color: var(--ink); box-shadow: 0 0 0 1px var(--glass-line) inset, 0 0 18px rgba(110, 160, 255, 0.25); }
+.circle-btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid rgba(190, 215, 255, 0.45); box-shadow: none; }
+.page-title { color: var(--ink); }
+.page-title small { color: var(--ink-3); }
+.list-title { color: var(--ink); }
+
+/* 가계부 */
+.sum-card { background: linear-gradient(160deg, rgba(120, 160, 255, 0.2), rgba(60, 100, 210, 0.1)); }
+.sum-card > div + div { border-left-color: var(--rule); }
+.sum-card span { color: var(--ink-3); }
+.sum-card strong { color: var(--ink); }
+.sum-card .t-in { color: var(--in); }
+.sum-card .t-out { color: var(--out); }
+.fx-card.next { background: linear-gradient(160deg, rgba(150, 190, 255, 0.3), rgba(90, 130, 230, 0.14)); box-shadow: 0 0 0 1px rgba(200, 220, 255, 0.35) inset, 0 0 24px rgba(110, 160, 255, 0.25); color: var(--ink); }
+.fx-card.next .fx-day, .fx-card.next .fx-state, .fx-card.next .fx-amt { color: var(--ink-2); }
+.fx-mark { border-color: var(--ink-2); border-top-color: transparent; }
+.fx-card.next .fx-mark { border-color: var(--ink); border-top-color: transparent; }
+.fx-mark.done { background: var(--accent); color: var(--on-accent); }
+.fixed-empty { color: var(--ink-2); }
+.chip-tab { border-color: var(--rule); color: var(--ink-2); }
+.chip-tab.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.day-head { border-bottom-color: var(--rule-soft); }
+.dh-week { background: rgba(170, 200, 255, 0.22); color: var(--ink); }
+.dh-week.sun { background: rgba(255, 130, 140, 0.32); color: #ffe4e6; }
+.dh-week.sat { background: rgba(110, 160, 255, 0.4); color: #e6efff; }
+.day-row + .day-row { border-top-color: var(--rule-soft); }
+.day-row:active { background: var(--glass-hi); }
+.month-cal { border-top: 0; }
+.mc-w { background: rgba(150, 185, 255, 0.1); color: var(--ink-2); }
+.mc-w.sun, .mc-d.sun { color: #ff9fae; }
+.mc-w.sat, .mc-d.sat { color: #9cc0ff; }
+.mc-cell { border-color: var(--rule-soft); }
+.mc-cell.outside { background: rgba(0, 0, 0, 0.18); }
+.mc-cell.today .mc-d { background: var(--accent); color: var(--on-accent); }
+.mc-cell.picked { background: var(--glass-hi); }
+.mc-net { color: var(--ink); }
+.pb-tag { color: var(--accent); border-color: rgba(156, 192, 255, 0.5); }
+
+/* 통계 */
+.bar-track { background: rgba(170, 200, 255, 0.12); }
+.bar-track span { background: linear-gradient(90deg, #6f9bff, #a9c8ff); }
+.bar-track span.fixed { background: linear-gradient(90deg, #8a7dff, #c2b8ff); }
+.plain-rows li + li { border-top-color: var(--rule-soft); }
+
+/* 메모 */
+.memo-list li:first-child .memo-card { background: linear-gradient(160deg, rgba(150, 190, 255, 0.24), rgba(90, 130, 230, 0.1)); }
+.memo-go { border-color: rgba(190, 215, 255, 0.45); color: var(--ink); }
+.memo-search { background: var(--glass); border-color: var(--rule); color: var(--ink); }
+
+/* 자산 */
+.soon-icon { background: var(--glass-hi); color: var(--ink); box-shadow: 0 0 0 1px var(--glass-line) inset; }
+.soon-card { color: var(--ink-2); }
+
+/* 설정, 입력 */
+input:not([type='checkbox']), select { background: rgba(4, 10, 30, 0.45); border-color: var(--rule); color: var(--ink); }
+input::placeholder { color: var(--ink-3); }
+select option { background: #101b42; color: var(--ink); }
+.seg { background: rgba(150, 185, 255, 0.1); }
+.seg button { color: var(--ink-2); }
+.seg button.on { background: var(--accent); color: var(--on-accent); }
+.btn { background: var(--accent); color: var(--on-accent); }
+.btn-ghost { border-color: rgba(190, 215, 255, 0.4); color: var(--ink); background: transparent; }
+.check input { accent-color: var(--accent); }
+.rule-list li { border-bottom-color: var(--rule-soft); }
+.text-btn { color: var(--accent); }
+
+/* 기록 창 */
+.sheet-backdrop { background: rgba(2, 5, 18, 0.6); }
+.sheet {
+  background: linear-gradient(180deg, #13214d, #0b1433);
+  box-shadow: 0 -1px 0 rgba(190, 215, 255, 0.25), 0 -20px 40px rgba(2, 6, 24, 0.6);
+}
+.entry-amount { color: var(--ink); border-bottom-color: var(--rule); }
+.entry-amount.is-empty { color: var(--ink-3); }
+.entry-amount span { color: var(--ink-2); }
+.entry-meta input { background: var(--glass); }
+.chip { background: var(--glass); border-color: var(--rule); color: var(--ink); }
+.chip:active { background: var(--accent); color: var(--on-accent); }
+.chip.current { border-color: var(--accent); color: var(--accent); }
+.keypad button { background: var(--glass); color: var(--ink); box-shadow: 0 0 0 1px var(--rule-soft) inset; }
+.keypad button:active { background: var(--glass-hi); }
+.memo-title-input { border-bottom-color: var(--rule); color: var(--ink); }
+.memo-body-input { color: var(--ink); background: repeating-linear-gradient(transparent 0 31px, var(--rule) 31px 32px); }
+.cat-list .btn-danger-text { white-space: nowrap; flex: none; }

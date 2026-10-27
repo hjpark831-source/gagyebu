@@ -4,6 +4,7 @@ import App from './App.jsx';
 import { StoreProvider } from './store.jsx';
 import './styles.css';
 import './theme-calm.css';
+import './theme-night.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
