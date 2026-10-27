@@ -442,3 +442,8 @@ html:root {
 .soon-icon { background: linear-gradient(160deg, #e5b569, #b97b34); }
 .memo-list li:first-child .memo-card { background: #f3e3c1; }
 .text-btn { color: var(--pine); }
+
+/* 메모 탭 올빼미 */
+.memo-owl { width: 76px; height: auto; margin: 0 6px -6px 0; transform: rotate(-4deg); }
+.memo-empty { display: grid; justify-items: center; gap: 14px; padding: 28px 24px 32px; background: var(--sheet); border-radius: 24px; text-align: center; color: var(--ink-2); font-size: 14.5px; }
+.memo-owl.big { width: 128px; margin: 0; transform: none; }

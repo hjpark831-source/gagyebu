@@ -28,6 +28,7 @@ export default function Memo({ onOpen, onNew }) {
           <small>적어 두면 잊지 않아요</small>
           메모
         </h1>
+        {memos.length > 0 && <img className="memo-owl" src="owl.png" alt="" aria-hidden="true" />}
       </div>
       {memos.length > 3 && (
         <input className="memo-search" value={query} placeholder="메모 찾기" onChange={(e) => setQuery(e.target.value)} aria-label="메모 찾기" />
@@ -51,9 +52,10 @@ export default function Memo({ onOpen, onNew }) {
           ))}
         </ul>
       ) : (
-        <p className="passbook-empty">
-          {q ? '찾는 메모가 없어요.' : '사야 할 것, 다음 달 계획, 기억해 둘 금액을 적어 두세요. 아래 + 버튼으로 시작해요.'}
-        </p>
+        <div className="memo-empty">
+          {!q && <img className="memo-owl big" src="owl.png" alt="" aria-hidden="true" />}
+          <p>{q ? '찾는 메모가 없어요.' : '사야 할 것, 다음 달 계획, 기억해 둘 금액을 적어 두세요. 왼쪽 위 + 버튼으로 시작해요.'}</p>
+        </div>
       )}
     </section>
   );
