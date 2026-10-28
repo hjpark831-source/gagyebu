@@ -1,6 +1,6 @@
 // 오프라인에서도 앱이 열리도록 파일을 저장해 두는 서비스 워커.
 // 인터넷이 되면 항상 최신 파일을 먼저 받고, 안 되면 저장해 둔 파일을 쓴다.
-const CACHE = 'gagyebu-v2';
+const CACHE = 'gagyebu-v3';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -21,8 +21,10 @@ self.addEventListener('fetch', (event) => {
   const isFont = url.hostname.endsWith('fonts.googleapis.com') || url.hostname.endsWith('fonts.gstatic.com');
   if (!sameOrigin && !isFont) return;
 
+  // 페이지와 앱 설정 파일은 항상 서버에 새 버전이 있는지 확인한다
+  const fresh = req.mode === 'navigate' || url.pathname.endsWith('.webmanifest');
   event.respondWith(
-    fetch(req)
+    fetch(fresh ? new Request(req, { cache: 'no-cache' }) : req)
       .then((res) => {
         if (res.ok || res.type === 'opaque') {
           const copy = res.clone();
