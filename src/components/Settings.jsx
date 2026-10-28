@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { currentYm, todayStr, won } from '../format.js';
 import { GROUPS, useStore } from '../store.jsx';
 import Icon from './Icons.jsx';
@@ -17,6 +17,7 @@ export default function Settings({ onBack }) {
           설정
         </h1>
       </div>
+      <BackupSection />
       <BudgetForm />
       <FixedRules />
       <CategoryManager />
@@ -29,6 +30,10 @@ function BudgetForm() {
   const { settings, setBudget } = useStore();
   const [value, setValue] = useState(settings.monthlyBudget ? String(settings.monthlyBudget) : '');
   const [saved, setSaved] = useState(false);
+  // 다른 폰에서 바꾼 예산이 백업으로 들어오면 입력칸도 맞춘다
+  useEffect(() => {
+    setValue(settings.monthlyBudget ? String(settings.monthlyBudget) : '');
+  }, [settings.monthlyBudget]);
   return (
     <form
       className="panel"
@@ -210,6 +215,7 @@ function CategoryManager() {
         {list.map((c, i) => (
           <li key={c.id}>
             <input
+              key={c.name}
               defaultValue={c.name}
               maxLength={12}
               aria-label={`${c.name} 이름`}
@@ -272,14 +278,69 @@ function DataSection() {
 
   return (
     <div className="panel">
-      <h3>데이터</h3>
-      <p className="panel-desc">
-        지금은 기록이 이 폰 안에만 저장돼요. 구글 계정 자동 백업은 다음 단계에서 연결할게요. 그 전까지는 가끔 엑셀 파일로
-        내려받아 두세요.
-      </p>
+      <h3>엑셀로 내려받기</h3>
+      <p className="panel-desc">모든 기록을 엑셀에서 열 수 있는 파일로 저장해요.</p>
       <button type="button" className="btn-ghost wide" onClick={exportCsv}>
         엑셀(CSV)로 내려받기
       </button>
+    </div>
+  );
+}
+
+function syncTimeLabel(ts) {
+  if (!ts) return '아직 백업 전';
+  const d = new Date(ts);
+  const sameDay = d.toDateString() === new Date().toDateString();
+  const hm = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return sameDay ? `오늘 ${hm}` : `${d.getMonth() + 1}월 ${d.getDate()}일 ${hm}`;
+}
+
+function BackupSection() {
+  const { cloud, connectGoogle, disconnectGoogle, syncNow } = useStore();
+
+  if (!cloud.configured) {
+    return (
+      <div className="panel">
+        <h3>구글 자동 백업</h3>
+        <p className="panel-desc">아직 연결 준비 중이에요. 그 전까지는 기록이 이 폰 안에만 저장돼요.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="panel">
+      <h3>구글 자동 백업</h3>
+      {cloud.user ? (
+        <>
+          <p className="backup-who">
+            <span className={`backup-dot ${cloud.error ? 'warn' : 'ok'}`} aria-hidden="true" />
+            {cloud.user.email}
+          </p>
+          <p className="panel-desc">
+            {cloud.syncing ? '백업하는 중…' : `마지막 백업: ${syncTimeLabel(cloud.lastSync)}`}. 기록할 때마다 자동으로 저장돼요.
+            폰을 바꿔도 같은 구글 계정으로 연결하면 그대로 이어서 쓸 수 있어요.
+          </p>
+          {cloud.error && <p className="backup-error">{cloud.error}</p>}
+          <div className="form-actions">
+            <button type="button" className="btn-danger-text" onClick={disconnectGoogle}>
+              연결 해제
+            </button>
+            <button type="button" className="btn" onClick={syncNow} disabled={cloud.syncing}>
+              지금 백업
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="panel-desc">
+            구글 계정으로 연결하면 기록할 때마다 클라우드에 자동으로 저장돼요. 폰을 바꿔도 같은 계정으로 연결하면 그대로 복원돼요.
+          </p>
+          {cloud.error && <p className="backup-error">{cloud.error}</p>}
+          <button type="button" className="btn wide-btn" onClick={connectGoogle}>
+            구글 계정으로 연결
+          </button>
+        </>
+      )}
     </div>
   );
 }

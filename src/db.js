@@ -1,8 +1,11 @@
 // 폰 브라우저 안의 데이터베이스(IndexedDB)에 기록을 저장한다.
-// 다음 단계에서 Firebase 동기화를 붙일 때도 이 저장 방식은 그대로 쓴다.
+// 구글 백업(Firebase)은 이 저장소를 기준으로 클라우드와 주고받는다 (sync.js).
 
 const DB_NAME = 'gagyebu';
 const VERSION = 2;
+// 기본 분류의 수정 시각. 새 폰에서 구글 백업을 처음 불러올 때 손대지 않은 기본 분류를 가려내는 표시.
+export const SEED_TIME = 1;
+
 export const STORES = ['transactions', 'categories', 'recurring', 'settings', 'memos'];
 
 let dbPromise;
@@ -40,6 +43,18 @@ export async function putMany(store, items) {
     const tx = db.transaction(store, 'readwrite');
     const os = tx.objectStore(store);
     for (const item of items) os.put(item);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export async function removeMany(store, ids) {
+  if (!ids.length) return;
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const os = tx.objectStore(store);
+    for (const id of ids) os.delete(id);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });

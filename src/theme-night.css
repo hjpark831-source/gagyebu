@@ -159,3 +159,11 @@ select option { background: #101b42; color: var(--ink); }
 .memo-title-input { border-bottom-color: var(--rule); color: var(--ink); }
 .memo-body-input { color: var(--ink); background: repeating-linear-gradient(transparent 0 31px, var(--rule) 31px 32px); }
 .cat-list .btn-danger-text { white-space: nowrap; flex: none; }
+
+/* 구글 백업 */
+.backup-who { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); word-break: break-all; }
+.backup-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.backup-dot.ok { background: #7ee0a6; box-shadow: 0 0 8px rgba(126, 224, 166, 0.7); }
+.backup-dot.warn { background: #ffb36b; }
+.backup-error { font-size: 13px; color: var(--out); }
+.wide-btn { width: 100%; }

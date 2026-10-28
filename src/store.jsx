@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { getAll, put, putMany } from './db.js';
+import { getAll, put, putMany, SEED_TIME } from './db.js';
+import { isConfigured, lastSyncedAt, signIn, signOutUser, syncNow, watchUser } from './sync.js';
 import { addMonths, currentYm, daysIn, pad, todayStr, uid } from './format.js';
 
 export const GROUPS = {
@@ -18,7 +19,7 @@ const DEFAULT_CATEGORIES = {
 const SAVING_NAMES = new Set(['적금', '주식']);
 
 function seedCategories() {
-  const now = Date.now();
+  const now = SEED_TIME;
   const out = [];
   for (const [group, names] of Object.entries(DEFAULT_CATEGORIES)) {
     names.forEach((name, i) =>
@@ -44,7 +45,7 @@ export function runRecurring(rules, transactions) {
       const key = `${r.id}:${ym}`;
       if (date <= today && !keys.has(key)) {
         created.push({
-          id: uid(),
+          id: `auto-${key.replace(/[^a-zA-Z0-9-]/g, '-')}`,
           type: 'expense',
           amount: r.amount,
           categoryId: r.categoryId,
@@ -62,11 +63,8 @@ export function runRecurring(rules, transactions) {
   return created;
 }
 
-// 앱을 열 때 한 번만 불러온다 (개발 모드에서 두 번 실행돼도 기본 분류가 중복 생성되지 않게).
-let loadPromise;
-function loadAll() {
-  if (!loadPromise) {
-    loadPromise = (async () => {
+// 폰 저장소에서 전부 읽어 온다. 기본 분류 만들기와 고정지출 자동 기록도 여기서 한다.
+async function readAll() {
       let [transactions, categories, recurring, settingsList, memos] = await Promise.all(
         ['transactions', 'categories', 'recurring', 'settings', 'memos'].map(getAll),
       );
@@ -81,8 +79,12 @@ function loadAll() {
         transactions = [...transactions, ...auto];
       }
       return { transactions, categories, recurring, settings, memos };
-    })();
-  }
+}
+
+// 앱을 열 때 한 번만 불러온다 (개발 모드에서 두 번 실행돼도 기본 분류가 중복 생성되지 않게).
+let loadPromise;
+function loadAll() {
+  if (!loadPromise) loadPromise = readAll();
   return loadPromise;
 }
 
@@ -102,6 +104,17 @@ export function StoreProvider({ children }) {
   const rawRef = useRef(raw);
   rawRef.current = raw;
 
+  // 구글 백업 상태
+  const [cloud, setCloud] = useState({
+    configured: isConfigured,
+    user: null,
+    syncing: false,
+    lastSync: lastSyncedAt(),
+    error: '',
+  });
+  const userRef = useRef(null);
+  const pushTimer = useRef(null);
+
   useEffect(() => {
     loadAll()
       .then((data) => {
@@ -114,6 +127,57 @@ export function StoreProvider({ children }) {
       });
   }, []);
 
+  const runSync = useCallback(async () => {
+    const user = userRef.current;
+    if (!user || !navigator.onLine) return;
+    setCloud((c) => ({ ...c, syncing: true, error: '' }));
+    try {
+      const changed = await syncNow(user);
+      if (changed) setRaw(await readAll());
+      setCloud((c) => ({ ...c, syncing: false, lastSync: lastSyncedAt() }));
+    } catch (e) {
+      console.error(e);
+      const msg =
+        e?.code === 'permission-denied'
+          ? '클라우드 보안 규칙이 막고 있어요. Firestore 규칙을 확인해 주세요.'
+          : '지금은 백업하지 못했어요. 인터넷이 연결되면 다시 시도해요.';
+      setCloud((c) => ({ ...c, syncing: false, error: msg }));
+    }
+  }, []);
+
+  // 기록이 바뀌면 잠시 뒤 한꺼번에 올린다
+  const schedulePush = useCallback(() => {
+    if (!userRef.current) return;
+    clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(runSync, 1500);
+  }, [runSync]);
+
+  // 로그인 상태 감시, 앱을 다시 보거나 인터넷이 돌아오면 동기화
+  useEffect(() => {
+    if (!isConfigured || status !== 'ready') return undefined;
+    let stop = () => {};
+    watchUser((user) => {
+      userRef.current = user;
+      setCloud((c) => ({ ...c, user: user ? { email: user.email, name: user.displayName } : null }));
+      if (user) runSync();
+    })
+      .then((fn) => {
+        stop = fn;
+      })
+      .catch((e) => {
+        console.error(e);
+        setCloud((c) => ({ ...c, error: '구글 백업을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.' }));
+      });
+    const onVisible = () => document.visibilityState === 'visible' && runSync();
+    window.addEventListener('online', runSync);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      stop();
+      window.removeEventListener('online', runSync);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [status, runSync]);
+
   const upsert = useCallback(async (store, item) => {
     const rec = { deleted: false, ...item, updatedAt: Date.now() };
     await put(store, rec);
@@ -122,14 +186,16 @@ export function StoreProvider({ children }) {
       const exists = list.some((x) => x.id === rec.id);
       return { ...r, [store]: exists ? list.map((x) => (x.id === rec.id ? rec : x)) : [...list, rec] };
     });
+    schedulePush();
     return rec;
-  }, []);
+  }, [schedulePush]);
 
   const addMany = useCallback(async (store, items) => {
     if (!items.length) return;
     await putMany(store, items);
     setRaw((r) => ({ ...r, [store]: [...r[store], ...items] }));
-  }, []);
+    schedulePush();
+  }, [schedulePush]);
 
   const actions = useMemo(
     () => ({
@@ -179,9 +245,30 @@ export function StoreProvider({ children }) {
         const settings = { ...rawRef.current.settings, monthlyBudget: amount, updatedAt: Date.now() };
         await put('settings', settings);
         setRaw((r) => ({ ...r, settings }));
+        schedulePush();
       },
+      connectGoogle: async () => {
+        setCloud((c) => ({ ...c, error: '' }));
+        try {
+          await signIn();
+        } catch (e) {
+          console.error(e);
+          if (e?.code !== 'auth/popup-closed-by-user') {
+            const msg =
+              e?.code === 'auth/unauthorized-domain'
+                ? 'Firebase 승인된 도메인에 hjpark831-source.github.io를 추가해 주세요.'
+                : '구글 로그인에 실패했어요. 잠시 뒤 다시 시도해 주세요.';
+            setCloud((c) => ({ ...c, error: msg }));
+          }
+        }
+      },
+      disconnectGoogle: async () => {
+        await signOutUser();
+        setCloud((c) => ({ ...c, user: null, lastSync: null }));
+      },
+      syncNow: runSync,
     }),
-    [upsert, addMany],
+    [upsert, addMany, schedulePush, runSync],
   );
 
   const value = useMemo(() => {
@@ -198,9 +285,10 @@ export function StoreProvider({ children }) {
         .filter((m) => !m.deleted)
         .sort((a, b) => (a.pinned === b.pinned ? b.updatedAt - a.updatedAt : a.pinned ? -1 : 1)),
       settings: raw.settings,
+      cloud,
       ...actions,
     };
-  }, [raw, status, actions]);
+  }, [raw, status, cloud, actions]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
