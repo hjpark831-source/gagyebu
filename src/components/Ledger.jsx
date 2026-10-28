@@ -98,7 +98,15 @@ export default function Ledger({ onEdit, onNew, goTo }) {
         <>
           <FixedCards ym={ym} rules={rules} month={month} catById={catById} goTo={goTo} />
           <FilterChips filter={filter} setFilter={setFilter} />
-          <h2 className="list-title">{filter === 'all' ? '날짜별 기록' : `${GROUPS[filter]} 기록`}</h2>
+          <h2 className="list-title filter-title">
+            {filter === 'all' ? '날짜별 기록' : `${GROUPS[filter]} 기록`}
+            {filter !== 'all' && (
+              <span className="filter-sum">
+                <small>{filtered.length}건 · 합계</small>
+                <strong className={filter === 'income' ? 't-in' : 't-out'}>{won(filtered.reduce((sum, t) => sum + t.amount, 0))}</strong>
+              </span>
+            )}
+          </h2>
           <DayGroups rows={sortByRecent(filtered)} onSelect={onEdit} empty="이 달에는 해당하는 기록이 없어요." />
         </>
       )}

@@ -256,3 +256,9 @@ select option { background: #101b42; color: var(--ink); }
 .import-summary { margin: 4px 0 14px; line-height: 1.7; color: var(--ink); font-size: 14px; }
 .import-summary strong { font-weight: 700; }
 .import-msg { margin-top: 12px; color: var(--ink); }
+
+/* 가계부 필터별 합계 */
+.filter-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.filter-sum { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.filter-sum small { font-family: var(--sans, inherit); font-size: 13px; color: var(--ink-2); font-weight: 400; }
+.filter-sum strong { font-size: 20px; font-weight: 600; }
