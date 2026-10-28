@@ -66,8 +66,8 @@ export function runRecurring(rules, transactions) {
 
 // 폰 저장소에서 전부 읽어 온다. 기본 분류 만들기와 고정지출 자동 기록도 여기서 한다.
 async function readAll() {
-      let [transactions, categories, recurring, settingsList, memos] = await Promise.all(
-        ['transactions', 'categories', 'recurring', 'settings', 'memos'].map(getAll),
+      let [transactions, categories, recurring, settingsList, memos, assets, snapshots] = await Promise.all(
+        ['transactions', 'categories', 'recurring', 'settings', 'memos', 'assets', 'snapshots'].map(getAll),
       );
       if (categories.length === 0) {
         categories = seedCategories();
@@ -79,7 +79,7 @@ async function readAll() {
         await putMany('transactions', auto);
         transactions = [...transactions, ...auto];
       }
-      return { transactions, categories, recurring, settings, memos };
+      return { transactions, categories, recurring, settings, memos, assets, snapshots };
 }
 
 // 앱을 열 때 한 번만 불러온다 (개발 모드에서 두 번 실행돼도 기본 분류가 중복 생성되지 않게).
@@ -96,6 +96,8 @@ const EMPTY = {
   categories: [],
   recurring: [],
   memos: [],
+  assets: [],
+  snapshots: [],
   settings: { id: 'main', monthlyBudget: 0 },
 };
 
@@ -201,6 +203,53 @@ export function StoreProvider({ children }) {
   const actions = useMemo(
     () => ({
       saveTransaction: (tx) => upsert('transactions', { id: uid(), ...tx }),
+      // 할부: 총액을 개월 수로 나눠 첫 결제일부터 매달 같은 날에 기록한다. 나머지 원 단위는 첫 달에 더한다.
+      saveInstallment: async ({ amount, months, date, memo, categoryId }) => {
+        const groupId = uid();
+        const base = Math.floor(amount / months);
+        const first = amount - base * (months - 1);
+        const [y, m, d] = date.split('-').map(Number);
+        const startYm = `${y}-${pad(m)}`;
+        const title = memo || '';
+        const now = Date.now();
+        const rows = Array.from({ length: months }, (_, i) => {
+          const ym = addMonths(startYm, i);
+          return {
+            id: `${groupId}-${i + 1}`,
+            type: 'expense',
+            amount: i === 0 ? first : base,
+            categoryId,
+            date: `${ym}-${pad(Math.min(d, daysIn(ym)))}`,
+            memo: `${title ? `${title} ` : ''}(${i + 1}/${months})`,
+            installmentId: groupId,
+            installmentNo: i + 1,
+            installmentOf: months,
+            installmentTotal: amount,
+            installmentTitle: title,
+            deleted: false,
+            updatedAt: now,
+          };
+        });
+        await addMany('transactions', rows);
+      },
+      removeInstallment: async (groupId) => {
+        const now = Date.now();
+        const rows = rawRef.current.transactions
+          .filter((t) => t.installmentId === groupId && !t.deleted)
+          .map((t) => ({ ...t, deleted: true, updatedAt: now }));
+        await putMany('transactions', rows);
+        setRaw((r) => ({
+          ...r,
+          transactions: r.transactions.map((t) => rows.find((x) => x.id === t.id) || t),
+        }));
+        schedulePush();
+      },
+      saveAsset: (asset) => upsert('assets', { id: uid(), ...asset }),
+      removeAsset: (id) => {
+        const a = rawRef.current.assets.find((x) => x.id === id);
+        return a && upsert('assets', { ...a, deleted: true });
+      },
+      saveSnapshot: (snap) => upsert('snapshots', snap),
       removeTransaction: (id) => {
         const tx = rawRef.current.transactions.find((t) => t.id === id);
         return tx && upsert('transactions', { ...tx, deleted: true });
@@ -282,6 +331,8 @@ export function StoreProvider({ children }) {
       categories,
       catById,
       rules: raw.recurring.filter((r) => !r.deleted),
+      assets: raw.assets.filter((a) => !a.deleted),
+      snapshots: raw.snapshots,
       memos: raw.memos
         .filter((m) => !m.deleted)
         .sort((a, b) => (a.pinned === b.pinned ? b.updatedAt - a.updatedAt : a.pinned ? -1 : 1)),

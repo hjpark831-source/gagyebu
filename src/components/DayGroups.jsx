@@ -41,10 +41,12 @@ export default function DayGroups({ rows, onSelect, empty }) {
                   <span className="dr-cat">
                     {cat?.name ?? '분류 없음'}
                     {cat?.group === 'fixed' && <i className="pb-tag">고정</i>}
+                    {t.installmentId && <i className="pb-tag">할부</i>}
                   </span>
                   <span className="dr-what">
                     <span className="dr-title">{t.memo || cat?.name || '기록'}</span>
                     {t.recurringKey && <span className="dr-sub">매달 자동 기록</span>}
+                    {t.installmentId && <span className="dr-sub">총 {num(t.installmentTotal)}원 할부</span>}
                   </span>
                   <span className={`dr-amt ${income ? 'in' : 'out'}`}>{num(t.amount)}원</span>
                 </button>
