@@ -376,3 +376,16 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; flex: none; }
 .keypad button { height: 54px; border-radius: 12px; background: var(--sheet); font-size: 22px; font-weight: 500; }
 .keypad button:active { background: var(--rule-soft); }
+
+/* 글자를 눌러도 크롬 '탭하여 검색'(아래 구글 검색창)이나 글자 선택이 뜨지 않게 한다. 입력칸은 그대로 선택 가능 */
+html, body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+input, textarea, select, [contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
