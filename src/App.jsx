@@ -47,6 +47,18 @@ export default function App() {
   const closeMemo = useCallback(() => setMemoOpen(null), []);
 
   if (status === 'loading') return <div className="boot" aria-busy="true" />;
+  if (status === 'blocked') {
+    return (
+      <div className="boot">
+        <p>
+          앱이 새 버전으로 바뀌는 중인데, 예전 버전이 다른 곳에 아직 열려 있어요.
+          <br />
+          <br />
+          휴대폰의 최근 앱 화면(화면 아래 ||| 버튼)에서 가계부와 크롬을 모두 닫은 뒤 다시 열어 주세요. 기록은 그대로 남아 있어요.
+        </p>
+      </div>
+    );
+  }
   if (status === 'error') {
     return (
       <div className="boot">

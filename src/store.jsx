@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { getAll, put, putMany, SEED_TIME } from './db.js';
+import { getAll, put, putMany, SEED_TIME, onDbBlocked } from './db.js';
 import { isConfigured, lastSyncedAt, signIn, signOutUser, syncNow, watchUser } from './sync.js';
 import { addMonths, currentYm, daysIn, pad, todayStr, uid } from './format.js';
 
@@ -119,6 +119,7 @@ export function StoreProvider({ children }) {
   const pushTimer = useRef(null);
 
   useEffect(() => {
+    onDbBlocked(() => setStatus((s) => (s === 'loading' ? 'blocked' : s)));
     loadAll()
       .then((data) => {
         setRaw(data);

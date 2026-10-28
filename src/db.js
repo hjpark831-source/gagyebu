@@ -10,6 +10,13 @@ export const STORES = ['transactions', 'categories', 'recurring', 'settings', 'm
 
 let dbPromise;
 
+// 예전 버전 앱이 다른 창(크롬 탭, 뒤에 떠 있는 앱)에서 저장소를 붙잡고 있으면 새 버전이 열리지 못한다.
+// 그때 화면에 안내를 띄우도록 알린다. 예전 창이 닫히면 저절로 이어서 열린다.
+let blockedListener = null;
+export function onDbBlocked(fn) {
+  blockedListener = fn;
+}
+
 function openDb() {
   if (!dbPromise) {
     dbPromise = new Promise((resolve, reject) => {
@@ -20,7 +27,16 @@ function openDb() {
           if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: 'id' });
         }
       };
-      req.onsuccess = () => resolve(req.result);
+      req.onblocked = () => blockedListener?.();
+      req.onsuccess = () => {
+        const db = req.result;
+        // 다음에 더 새 버전이 열리려 하면 이 창은 저장소를 내려놓고 새로 고친다 (서로 막지 않게)
+        db.onversionchange = () => {
+          db.close();
+          location.reload();
+        };
+        resolve(db);
+      };
       req.onerror = () => reject(req.error);
     });
   }
