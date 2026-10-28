@@ -120,14 +120,31 @@ async function pull(user) {
     const local = await getAll(store);
     const byId = new Map(local.map((r) => [r.id, r]));
 
-    // 새 폰에서 처음 연결: 손대지 않은 기본 분류는 지우고 클라우드 분류를 쓴다
+    let incoming = remote;
     if (firstTime && store === 'categories') {
+      // 이 폰에서 이미 쓰던 분류가 있으면, 클라우드에 있는 '손대지 않은 기본 분류'는 받지 않는다 (중복 방지)
+      const localReal = local.filter((c) => c.updatedAt !== SEED_TIME);
+      // (단, 받아 온 기록이 그 분류를 쓰고 있으면 받아 둔다)
+      if (localReal.length) {
+        const used = new Set((await getAll('transactions')).map((t) => t.categoryId));
+        incoming = remote.filter((r) => r.updatedAt !== SEED_TIME || used.has(r.id));
+        // 받지 않은 기본 분류는 클라우드에서도 지운 것으로 표시한다 (다른 폰에서도 중복이 사라지게)
+        const dropped = remote.filter((r) => r.updatedAt === SEED_TIME && !used.has(r.id) && !r.deleted);
+        if (dropped.length) {
+          const now = Date.now();
+          await putMany('categories', dropped.map((r) => ({ ...r, deleted: true, updatedAt: now })));
+          changed = true;
+        }
+      }
+      // 새 폰이라 기본 분류만 있으면, 그건 지우고 클라우드 분류를 쓴다
       const untouched = local.filter((c) => c.updatedAt === SEED_TIME).map((c) => c.id);
-      await removeMany('categories', untouched);
-      untouched.forEach((id) => byId.delete(id));
+      if (incoming.length && untouched.length) {
+        await removeMany('categories', untouched);
+        untouched.forEach((id) => byId.delete(id));
+      }
     }
 
-    const take = remote.filter((r) => {
+    const take = incoming.filter((r) => {
       const mine = byId.get(r.id);
       return !mine || (r.updatedAt || 0) > (mine.updatedAt || 0);
     });

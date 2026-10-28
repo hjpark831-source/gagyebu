@@ -22,8 +22,9 @@ function seedCategories() {
   const now = SEED_TIME;
   const out = [];
   for (const [group, names] of Object.entries(DEFAULT_CATEGORIES)) {
+    // 기본 분류 id는 모든 폰에서 같게 만든다 (백업으로 합칠 때 같은 분류로 인식)
     names.forEach((name, i) =>
-      out.push({ id: uid(), name, group, order: i, saving: SAVING_NAMES.has(name), deleted: false, updatedAt: now }),
+      out.push({ id: `seed-${group}-${i}`, name, group, order: i, saving: SAVING_NAMES.has(name), deleted: false, updatedAt: now }),
     );
   }
   return out;
