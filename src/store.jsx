@@ -245,6 +245,59 @@ export function StoreProvider({ children }) {
         }));
         schedulePush();
       },
+      // 다른 가계부 앱에서 옮겨 온 기록 불러오기 (gagyebu-import 파일).
+      // 같은 파일을 두 번 불러와도 겹치지 않게 이미 있는 기록·반복 항목은 건너뛴다.
+      importBackup: async (data) => {
+        const now = Date.now();
+        const cur = rawRef.current;
+        const catIds = {};
+        const newCats = [];
+        for (const c of data.categories) {
+          const found = cur.categories.find((x) => !x.deleted && x.group === c.group && x.name === c.name);
+          if (found) {
+            catIds[c.key] = found.id;
+            continue;
+          }
+          const siblings = [...cur.categories, ...newCats].filter((x) => x.group === c.group && !x.deleted);
+          const order = siblings.reduce((m, x) => Math.max(m, x.order), -1) + 1;
+          const cat = { id: uid(), name: c.name, group: c.group, order, saving: !!c.saving, deleted: false, updatedAt: now };
+          newCats.push(cat);
+          catIds[c.key] = cat.id;
+        }
+        const have = new Set(cur.transactions.map((t) => t.id));
+        const txs = data.transactions
+          .filter((t) => !have.has(t.id))
+          .map((t) => {
+            const rec = { id: t.id, type: t.type, amount: t.amount, categoryId: catIds[t.cat], date: t.date, memo: t.memo || '', importedFrom: data.source, deleted: false, updatedAt: now };
+            if (t.installment) {
+              Object.assign(rec, {
+                installmentId: t.installment.group,
+                installmentNo: t.installment.no,
+                installmentOf: t.installment.of,
+                installmentTotal: t.installment.total,
+                installmentTitle: t.installment.title,
+              });
+            }
+            return rec;
+          });
+        const liveRules = cur.recurring.filter((r) => !r.deleted);
+        const rules = (data.rules || [])
+          .filter((r) => !cur.recurring.some((x) => x.id === r.id))
+          .filter((r) => !liveRules.some((x) => x.name === r.name && Number(x.amount) === r.amount))
+          .map((r) => ({ id: r.id, categoryId: catIds[r.cat], name: r.name, amount: r.amount, day: r.day, auto: true, startMonth: r.startMonth, deleted: false, updatedAt: now }));
+        const auto = runRecurring(rules, [...cur.transactions, ...txs]);
+        await putMany('categories', newCats);
+        await putMany('transactions', [...txs, ...auto]);
+        await putMany('recurring', rules);
+        setRaw((r) => ({
+          ...r,
+          categories: [...r.categories, ...newCats],
+          transactions: [...r.transactions, ...txs, ...auto],
+          recurring: [...r.recurring, ...rules],
+        }));
+        schedulePush();
+        return { transactions: txs.length, skipped: data.transactions.length - txs.length, categories: newCats.map((c) => (c.group === 'income' ? `${c.name}(수입)` : c.name)), rules: rules.length };
+      },
       saveAsset: (asset) => upsert('assets', { id: uid(), ...asset }),
       removeAsset: (id) => {
         const a = rawRef.current.assets.find((x) => x.id === id);

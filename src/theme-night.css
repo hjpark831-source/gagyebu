@@ -250,3 +250,9 @@ select option { background: #101b42; color: var(--ink); }
 .asset-form label { display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); }
 .asset-form label.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); }
 .asset-preview { font-family: var(--serif); font-size: 17px; color: var(--ink); padding: 4px 2px; }
+
+/* 예전 가계부 불러오기 */
+.file-btn { display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.import-summary { margin: 4px 0 14px; line-height: 1.7; color: var(--ink); font-size: 14px; }
+.import-summary strong { font-weight: 700; }
+.import-msg { margin-top: 12px; color: var(--ink); }

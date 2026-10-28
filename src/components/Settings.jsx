@@ -22,6 +22,7 @@ export default function Settings({ onBack }) {
       <FixedRules />
       <CategoryManager />
       <DataSection />
+      <ImportSection />
     </section>
   );
 }
@@ -283,6 +284,86 @@ function DataSection() {
       <button type="button" className="btn-ghost wide" onClick={exportCsv}>
         엑셀(CSV)로 내려받기
       </button>
+    </div>
+  );
+}
+
+function ImportSection() {
+  const { importBackup } = useStore();
+  const [data, setData] = useState(null);
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const pick = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setMsg('');
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (parsed.format !== 'gagyebu-import' || !Array.isArray(parsed.transactions)) throw new Error('format');
+      setData(parsed);
+    } catch {
+      setData(null);
+      setMsg('불러올 수 없는 파일이에요. 변환해 받은 가계부_불러오기 파일을 골라 주세요.');
+    }
+  };
+
+  const run = async () => {
+    setBusy(true);
+    try {
+      const r = await importBackup(data);
+      const parts = [`기록 ${r.transactions.toLocaleString('ko-KR')}건을 가져왔어요.`];
+      if (r.skipped) parts.push(`이미 있던 ${r.skipped.toLocaleString('ko-KR')}건은 건너뛰었어요.`);
+      if (r.categories.length) parts.push(`새 분류: ${r.categories.join(', ')}.`);
+      if (r.rules) parts.push(`매달 자동 기록 ${r.rules}개를 고정지출에 추가했어요.`);
+      setMsg(parts.join(' '));
+      setData(null);
+    } catch (err) {
+      console.error(err);
+      setMsg('가져오는 중에 문제가 생겼어요. 다시 시도해 주세요.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const txs = data?.transactions ?? [];
+  const dates = txs.map((t) => t.date).sort();
+  const fmt = (d) => d?.replace(/-/g, '.');
+
+  return (
+    <div className="panel import-panel">
+      <h3>예전 가계부 불러오기</h3>
+      <p className="panel-desc">다른 가계부 앱에서 옮겨 온 기록 파일을 가져와요. 같은 파일을 다시 불러와도 겹치지 않아요.</p>
+      {data ? (
+        <>
+          <p className="import-summary">
+            <strong>{data.source}</strong> 기록 {txs.length.toLocaleString('ko-KR')}건
+            <br />
+            {fmt(dates[0])} ~ {fmt(dates[dates.length - 1])}
+            {data.rules?.length ? (
+              <>
+                <br />
+                매달 자동 기록 {data.rules.length}개 ({data.rules.map((r) => r.name).join(', ')})
+              </>
+            ) : null}
+          </p>
+          <div className="form-actions">
+            <button type="button" className="btn-ghost" onClick={() => setData(null)} disabled={busy}>
+              취소
+            </button>
+            <button type="button" className="btn" onClick={run} disabled={busy}>
+              {busy ? '가져오는 중…' : '가져오기'}
+            </button>
+          </div>
+        </>
+      ) : (
+        <label className="btn-ghost wide file-btn">
+          파일 고르기
+          <input type="file" onChange={pick} hidden />
+        </label>
+      )}
+      {msg && <p className="panel-desc import-msg">{msg}</p>}
     </div>
   );
 }
