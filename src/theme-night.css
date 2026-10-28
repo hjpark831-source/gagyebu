@@ -167,3 +167,16 @@ select option { background: #101b42; color: var(--ink); }
 .backup-dot.warn { background: #ffb36b; }
 .backup-error { font-size: 13px; color: var(--out); }
 .wide-btn { width: 100%; }
+
+/* 처음 화면: 스크롤 없이 한 화면에 */
+.app[data-screen='launcher'] main { padding-bottom: 0; }
+.launcher {
+  height: 100dvh;
+  min-height: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+.launcher .tiles { margin-top: clamp(20px, 6dvh, 64px); }
+.launcher .scene { height: 60dvh; }
+.launcher { margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
+.launcher .scene { left: 0; right: 0; }

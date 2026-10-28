@@ -1,6 +1,6 @@
 // 오프라인에서도 앱이 열리도록 파일을 저장해 두는 서비스 워커.
 // 인터넷이 되면 항상 최신 파일을 먼저 받고, 안 되면 저장해 둔 파일을 쓴다.
-const CACHE = 'gagyebu-v3';
+const CACHE = 'gagyebu-v4';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -35,5 +35,16 @@ self.addEventListener('fetch', (event) => {
       .catch(() =>
         caches.match(req).then((hit) => hit || (req.mode === 'navigate' ? caches.match('./') : undefined)),
       ),
+  );
+});
+
+// 앱이 처음 열렸을 때 쓴 파일 목록을 받아 미리 저장한다 (다음부터 인터넷 없이도 열리게)
+self.addEventListener('message', (event) => {
+  const urls = event.data && event.data.precache;
+  if (!Array.isArray(urls)) return;
+  event.waitUntil(
+    caches.open(CACHE).then((c) =>
+      Promise.all(urls.map((u) => c.add(new Request(u, { cache: 'reload' })).catch(() => {}))),
+    ),
   );
 });
